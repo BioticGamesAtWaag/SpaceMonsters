@@ -51,80 +51,13 @@ int segmentThreshold = segmentSize * segmentSize / 3;
 
 /* Slider Bar */
 HScrollbar hs1, hs2;
-
-/* Define a Blob class */
-class Blob {
-  ArrayList<Integer> blobX = new ArrayList<Integer>();  //  X coordinates
-  ArrayList<Integer> blobY = new ArrayList<Integer>();  //  Y coordinates
-  ArrayList<Integer> blobS = new ArrayList<Integer>();  //  # of sections
-  ArrayList<Integer> blobA = new ArrayList<Integer>();  //  Area in pixels
-  boolean isPacMan = false;                             //  Pacman flag
-  
-  Blob (int bX, int bY, int bS, int bA, boolean selected) // Constructor
-  {
-      blobX.add(bX);
-      blobY.add(bY);
-      blobS.add(bS);
-      blobA.add(bA);
-      isPacMan = selected;
-  }
-  
-  void addXYSA(int X, int Y, int S, int A) // add coordinates
-  {
-      blobX.add(X);
-      blobY.add(Y);
-      blobS.add(S);
-      blobA.add(A);
-  }
-  
-  void togglePacMan() {
-    if(isPacMan) { 
-      isPacMan = false;
-    } else {
-      isPacMan = true;
-    }
-  }
-}
-
-/* Define a Dot class */
-class Dot {
-  int dotX, dotY, dotWidth, dotHeight;    //  Variables to hold the dot's coordinates and width/height
- 
-  Dot ( int dX, int dY, int dW, int dH )  //  Class constructor- sets all the values when a new dot object is created
-  {
-    dotX = dX;
-    dotY = dY;
-    dotWidth = dW;
-    dotHeight = dH;
-  }
- 
-  int update()              //  The Dot update function
-  {
-    boolean hit = false;    //  Flag whether PacMan has hit this dot
-    for(int i = 0; i < blobs.size(); i++) {  //  Loop through all blobs
-      Blob _blob = (Blob) blobs.get(i);      //  Copy temp blob
-      if(_blob.isPacMan) {                   //  Check whether blob is PacMan
-        if(dotX > _blob.blobX.get(_blob.blobX.size()-1)-20 && dotX < _blob.blobX.get(_blob.blobX.size()-1)+20) {    //  Check whether dot is in range of PacMan
-          if(dotY > _blob.blobY.get(_blob.blobY.size()-1)-20 && dotY < _blob.blobY.get(_blob.blobY.size()-1)+20) {  //  Check whether dot is in range of PacMan
-            hit = true;  // In case PacMan is in range, flag that dot has been eaten
-          }
-        }
-      }
-    }
-    if(hit) {     //  In case dot has been eaten
-      score++;    //  Score goes 1 up
-      return 1;   //  Return 1 so dot gets destroyed
-    } else {
-      image(dotPNG, dotX, dotY);  // Draw dot on screen
-      return 0;   //  Return 0 so dot is saved
-    }
-  }
-}
+Boolean scroll_lock = false;
 
 /* Setup function */
 void setup() {
-  size(640, 960);                         //  Create canvas window
-  video = new Capture(this, 640, 480);    //  Define video size
+  size(640, 960);                    
+  String[] cameras = Capture.list();//  Create canvas window
+  video = new Capture(this, 640, 480, cameras[0], 30);    //  Define video size
   opencv = new OpenCV(this, 640, 480);    //  Define opencv size
 
   video.start();                          //  Start capturing video        
@@ -196,7 +129,7 @@ void draw() {
   }
 
   drawing.endDraw();
-  
+/*  
   // Draw all dots
   for( int i = 0; i < dots.size(); i++) {   //  Loop through all dots
     Dot _dot = (Dot) dots.get(i);           //  Temp copy
@@ -211,11 +144,12 @@ void draw() {
       _dot = null;                          //  Makes the temporary dot object null.
     }
   }
+  */
   
   // Draw the offscreen buffer to the screen with image() 
   image(drawing, 0, 0);
   
-  opencv.loadImage(drawing);
+  //opencv.loadImage(drawing);
   
   // Analyze video
   contours = opencv.findContours();         //  Find contours
@@ -318,8 +252,8 @@ void draw() {
   SizeThreshold = int(hs2.getPos());
   text("SizeThreshold: " + SizeThreshold * 10, 30, 60);
   
-  hs1.update();
-  hs2.update();
+  scroll_lock = hs1.update(scroll_lock);
+  scroll_lock = hs2.update(scroll_lock);
   hs1.display();
   hs2.display();
   
@@ -348,82 +282,5 @@ void mouseClicked() {
       }
     }
     _blob = null; //  Reset
-  }
-}
-
-/* Scrollbar class */
-class HScrollbar {
-  int swidth, sheight;    // width and height of bar
-  float xpos, ypos;       // x and y position of bar
-  float spos, newspos;    // x position of slider
-  float sposMin, sposMax; // max and min values of slider
-  int loose;              // how loose/heavy
-  boolean over;           // is the mouse over the slider?
-  boolean locked;
-  float ratio;
-
-  HScrollbar (float xp, float yp, int sw, int sh, int l) {
-    swidth = sw;
-    sheight = sh;
-    int widthtoheight = sw - sh;
-    ratio = (float)sw / (float)widthtoheight;
-    xpos = xp;
-    ypos = yp-sheight/2;
-    spos = xpos + swidth/2 - sheight/2;
-    newspos = spos;
-    sposMin = xpos;
-    sposMax = xpos + swidth - sheight;
-    loose = l;
-  }
-
-  void update() {
-    if (overEvent()) {
-      over = true;
-    } else {
-      over = false;
-    }
-    if (mousePressed && over) {
-      locked = true;
-    }
-    if (!mousePressed) {
-      locked = false;
-    }
-    if (locked) {
-      newspos = constrain(mouseX-sheight/2, sposMin, sposMax);
-    }
-    if (abs(newspos - spos) > 1) {
-      spos = spos + (newspos-spos)/loose;
-    }
-  }
-
-  float constrain(float val, float minv, float maxv) {
-    return min(max(val, minv), maxv);
-  }
-
-  boolean overEvent() {
-    if (mouseX > xpos && mouseX < xpos+swidth &&
-       mouseY > ypos && mouseY < ypos+sheight) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  void display() {
-    noStroke();
-    fill(204);
-    rect(xpos, ypos, swidth, sheight);
-    if (over || locked) {
-      fill(0, 0, 0);
-    } else {
-      fill(102, 102, 102);
-    }
-    rect(spos, ypos, sheight, sheight);
-  }
-
-  float getPos() {
-    // Convert spos to be values between
-    // 0 and the total width of the scrollbar
-    return spos * ratio;
   }
 }
