@@ -35,9 +35,10 @@ class HScrollbar {
     }
     if (locked) {
       newspos = constrain(mouseX-sheight/2, sposMin, sposMax);
-    }
-    if (abs(newspos - spos) > 1) {
-      spos = spos + (newspos-spos)/loose;
+    
+      if (abs(newspos - spos) > 1) {
+        spos = newspos;
+      }
     }
     return scroll_lock;
   }

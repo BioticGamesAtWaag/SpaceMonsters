@@ -46,7 +46,7 @@ int pacManBlobID = 0;             //  Initial blob that holds PacMan image
 int ContourThreshold = 20;        //  Contour detection sensitivity of the script
 int SizeThreshold = 100;          //  Contour size threshold
 int MovementMargin = 40;          //  Max difference in coordinates
-int segmentSize = 10;
+int segmentSize = 5;
 int segmentThreshold = segmentSize * segmentSize / 3;
 
 /* Slider Bar */
@@ -56,8 +56,19 @@ Boolean scroll_lock = false;
 /* Setup function */
 void setup() {
   size(640, 960);                    
+  
   String[] cameras = Capture.list();//  Create canvas window
-  video = new Capture(this, 640, 480, cameras[0], 30);    //  Define video size
+  if (cameras.length == 0) {
+    println("There are no cameras available for capture.");
+    exit();
+  } else {
+    println("Available cameras:");
+    for (int i = 0; i < cameras.length; i++) {
+      println(i, cameras[i]);
+    }
+  }      
+  
+  video = new Capture(this, 640, 480, cameras[12], 30);    //  Define video size
   opencv = new OpenCV(this, 640, 480);    //  Define opencv size
 
   video.start();                          //  Start capturing video        
@@ -129,7 +140,7 @@ void draw() {
   }
 
   drawing.endDraw();
-/*  
+  
   // Draw all dots
   for( int i = 0; i < dots.size(); i++) {   //  Loop through all dots
     Dot _dot = (Dot) dots.get(i);           //  Temp copy
@@ -144,7 +155,7 @@ void draw() {
       _dot = null;                          //  Makes the temporary dot object null.
     }
   }
-  */
+  
   
   // Draw the offscreen buffer to the screen with image() 
   image(drawing, 0, 0);
